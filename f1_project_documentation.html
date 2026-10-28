@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F1 Race Intelligence – Project Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --red: #e8002d;
+    --cyan: #00d4ff;
+    --gold: #ffd700;
+    --bg: #0a0a0f;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.1);
+    --text: #e8e8f0;
+    --muted: #8888aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* ── COVER PAGE ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232,0,45,0.18) 0%, transparent 70%),
+                radial-gradient(ellipse at 80% 80%, rgba(0,212,255,0.10) 0%, transparent 60%),
+                #0a0a0f;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: 'F1';
+    position: absolute;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 40vw;
+    font-weight: 700;
+    color: rgba(255,255,255,0.015);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    user-select: none;
+  }
+  .cover-tag {
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 20px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+  .cover h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 700;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 30%, var(--red) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .cover-sub {
+    font-size: 18px;
+    color: var(--cyan);
+    font-weight: 500;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 50px;
+  }
+  .cover-meta-item { text-align: center; }
+  .cover-meta-item .label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .cover-meta-item .value { font-size: 16px; font-weight: 600; color: var(--text); margin-top: 4px; }
+  .cover-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cover-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 32px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+  }
+  .cover-stat .num { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 700; color: var(--red); }
+  .cover-stat .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ── CONTENT ── */
+  .content { max-width: 960px; margin: 0 auto; padding: 80px 40px; }
+
+  .section { margin-bottom: 80px; }
+
+  .section-tag {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 14px;
+  }
+  h2::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 48px; height: 3px;
+    background: var(--red);
+    border-radius: 2px;
+  }
+  h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin: 32px 0 12px;
+  }
+  p { color: var(--muted); margin-bottom: 16px; font-size: 15px; }
+  p strong { color: var(--text); }
+
+  /* ── SCENARIO CARDS ── */
+  .scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin: 32px 0; }
+  .scenario-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .scenario-card.red::before { background: var(--red); }
+  .scenario-card.cyan::before { background: var(--cyan); }
+  .scenario-card.gold::before { background: var(--gold); }
+  .scenario-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+  .scenario-tag { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .scenario-card.red .scenario-tag { color: var(--red); }
+  .scenario-card.cyan .scenario-tag { color: var(--cyan); }
+  .scenario-card.gold .scenario-tag { color: var(--gold); }
+  .scenario-card h4 { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .scenario-card p { font-size: 13px; margin: 0; }
+
+  /* ── ARCH FLOW ── */
+  .arch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 28px 0;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .arch-node {
+    background: rgba(232,0,45,0.12);
+    border: 1px solid rgba(232,0,45,0.3);
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    min-width: 120px;
+  }
+  .arch-arrow { color: var(--muted); font-size: 20px; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
+  thead { background: rgba(232,0,45,0.15); }
+  th { padding: 12px 16px; text-align: left; font-weight: 600; color: #fff; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 16px; color: var(--muted); border-bottom: 1px solid rgba(255,255,255,0.04); }
+  tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-red { background: rgba(232,0,45,0.2); color: var(--red); }
+  .badge-cyan { background: rgba(0,212,255,0.15); color: var(--cyan); }
+  .badge-gold { background: rgba(255,215,0,0.15); color: var(--gold); }
+  .badge-green { background: rgba(0,255,100,0.12); color: #00e676; }
+
+  /* ── EPICS ── */
+  .epics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 28px 0; }
+  .epic {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .epic-num { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: var(--red); }
+  .epic-title { font-size: 13px; font-weight: 600; color: #fff; margin: 4px 0; }
+  .epic-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── COLUMNS ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul { padding-left: 20px; margin-bottom: 16px; }
+  li { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  li strong { color: var(--text); }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 60px 0; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer span { color: var(--red); }
+
+  /* print styles */
+  @media print {
+    body { background: #fff; color: #111; }
+    .cover { background: #fff; min-height: unset; padding: 40px 20px; page-break-after: always; }
+    .cover h1 { -webkit-text-fill-color: #e8002d; }
+    .cover-stat, .scenario-card, .arch, .epic { background: #f5f5f5; border-color: #ddd; }
+    p, li, td { color: #444; }
+    th { color: #111; }
+    h2, h3, h4 { color: #111; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ COVER ══════════════ -->
+<div class="cover">
+  <div class="cover-tag">Data Analytics with Tableau</div>
+  <h1>Formula 1 Race Intelligence<br/>Dashboard Analysis Report</h1>
+  <div class="cover-sub">2009 – 2025 | 17 Seasons | Multi-Analyst Dashboard</div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Prepared By</div>
+      <div class="value">Data Analytics Team</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Tool Used</div>
+      <div class="value">Tableau Desktop</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Date</div>
+      <div class="value">October 2026</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Project Type</div>
+      <div class="value">Individual Project</div>
+    </div>
+  </div>
+
+  <div class="cover-stats">
+    <div class="cover-stat"><div class="num">5,419</div><div class="desc">Race Records</div></div>
+    <div class="cover-stat"><div class="num">17</div><div class="desc">F1 Seasons</div></div>
+    <div class="cover-stat"><div class="num">30</div><div class="desc">Drivers Tracked</div></div>
+    <div class="cover-stat"><div class="num">11</div><div class="desc">Visualizations</div></div>
+    <div class="cover-stat"><div class="num">3</div><div class="desc">Dashboards</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ CONTENT ══════════════ -->
+<div class="content">
+
+  <!-- INTRODUCTION -->
+  <div class="section">
+    <div class="section-tag">01 — Introduction</div>
+    <h2>Project Overview</h2>
+    <p>
+      This report delves into the captivating realm of <strong>Formula 1 Race Intelligence</strong>, providing a comprehensive visual exploration of key aspects and trends in the world's premier motorsport competition. Through visual representations, readers can gain valuable insights into <strong>driver performance</strong>, team championship trajectories, tyre compound strategies, circuit-wise race participation, driver reliability, and DNF analysis, as well as global podium achievements.
+    </p>
+    <p>
+      These visualizations enable intuitive analysis, allowing stakeholders — including team strategists, race engineers, motorsport journalists, and F1 fans — to <strong>uncover patterns, identify areas of strength or concern, and make data-driven decisions</strong>.
+    </p>
+    <p>
+      By harnessing the power of <strong>Tableau</strong>, this report not only presents the data in a visually appealing manner but also provides an interactive experience for readers to explore the intricacies of Formula 1 race intelligence. The dataset covers <strong>5,419 race entries across 17 seasons (2009–2025)</strong> with 30 drivers across 10 constructor teams.
+    </p>
+  </div>
+
+  <hr/>
+
+  <!-- BUSINESS PROBLEM -->
+  <div class="section">
+    <div class="section-tag">02 — Problem Understanding</div>
+    <h2>Business Problem</h2>
+    <p>
+      Formula 1 generates enormous volumes of race data across every season. Teams, broadcasters, and regulators all need to analyze this data from <strong>different perspectives</strong> and with different goals. The core challenge is creating a <strong>unified intelligence platform</strong> that serves multiple analyst roles simultaneously.
+    </p>
+
+    <h3>Business Requirements</h3>
+    <ul>
+      <li>Enable <strong>team strategists</strong> to benchmark performance against rivals using historical points data</li>
+      <li>Allow <strong>broadcast analysts</strong> to quickly retrieve driver and country-level statistics for live coverage</li>
+      <li>Support <strong>technical regulation analysts</strong> in identifying DNF patterns and evaluating reliability improvements</li>
+      <li>Provide a <strong>responsive and interactive dashboard</strong> that supports season-level and driver-level filtering</li>
+      <li>Visualize <strong>17 seasons of data</strong> in a single unified Tableau workbook</li>
+    </ul>
+
+    <h3>Social & Business Impact</h3>
+    <p>
+      The F1 Race Intelligence Dashboard enables <strong>data-driven decision making</strong> at multiple organizational levels. For constructor teams, smarter tyre strategies and recruitment decisions based on talent-pool analytics can directly impact championship outcomes. For broadcasters, rapid access to compelling statistics improves fan engagement. For the FIA, reliability data supports evidence-based technical regulation improvements that reduce driver risk.
+    </p>
+
+    <h3>Literature Survey</h3>
+    <p>
+      Formula 1 analytics has grown significantly with the adoption of real-time telemetry systems. Academic research by <em>Bekker & Lotriet (2018)</em> demonstrated that predictive models using historical race data can forecast race outcomes with up to 73% accuracy. Tableau has been used in sports analytics across the NFL, NBA, and Premier League for real-time performance monitoring and fan-facing infographics. This project adapts these methodologies for the F1 domain.
+    </p>
+  </div>
+
+  <hr/>
+
+  <!-- SCENARIOS -->
+  <div class="section">
+    <div class="section-tag">03 — Analyst Scenarios</div>
+    <h2>User Personas & Scenarios</h2>
+
+    <div class="scenarios">
+      <div class="scenario-card red">
+        <div class="scenario-tag">Scenario 1</div>
+        <h4>Mr. Arnold — F1 Team Performance Strategist</h4>
+        <p>A senior performance strategist at a mid-tier F1 constructor team. He benchmarks his team's championship points trajectory against Red Bull and Mercedes, evaluates how tyre compound strategies affect race outcomes across different circuit types, and identifies which drivers and nationalities represent the strongest talent pools globally. Using the F1 Race Intelligence Dashboard built on 5,419 race records across 17 seasons, Rajan aims to develop a data-driven race and recruitment strategy to climb the Constructors' Championship standings.</p>
+      </div>
+      <div class="scenario-card cyan">
+        <div class="scenario-tag">Scenario 2</div>
+        <h4>Ms. Iisa — Motorsport Broadcast Analyst</h4>
+        <p>A motorsport data journalist and broadcast analyst at a leading sports media network preparing pre-race and post-race content for Formula 1 coverage. She needs to quickly retrieve the Driver Performance Leaderboard showing cumulative points across seasons, identify which countries have hosted the most Grand Prix rounds, and visualize podium achievement distributions by driver and team for compelling on-screen infographics. The F1 Race Intelligence Dashboard enables Divya to rapidly pull data-rich visuals and statistics for live broadcast, editorial pieces, and fan engagement content.</p>
+      </div>
+      <div class="scenario-card gold">
+        <div class="scenario-tag">Scenario 3</div>
+        <h4>Mr. Gilchrist — F1 Technical Regulation Analyst</h4>
+        <p>Works at the FIA as a technical regulation compliance analyst. He studies DNF (Did Not Finish) patterns across drivers to identify whether specific failure types — engine failures, brake failures, collisions, mechanical issues — are concentrated in particular teams or circuit types. He evaluates driver reliability scores across all 17 seasons to assess whether regulatory changes have improved race completion rates. Using the Driver Reliability Analysis stacked bar chart on the Race Intelligence Dashboard, Arvind identifies systemic failure patterns and presents evidence-based recommendations for technical regulation improvements.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- DATA COLLECTION -->
+  <div class="section">
+    <div class="section-tag">04 — Data Collection & Extraction</div>
+    <h2>Dataset Description</h2>
+
+    <p>
+      The F1 race dataset was constructed to represent realistic historical Formula 1 race results from <strong>2009 through 2025</strong>, covering 17 complete seasons. The dataset contains <strong>5,419 rows</strong> with each row representing a single driver's result in a single race.
+    </p>
+
+    <h3>Data Schema</h3>
+    <table>
+      <thead>
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Race_ID</td><td>Integer</td><td>Unique identifier for each race event</td></tr>
+        <tr><td>Season</td><td>Integer</td><td>F1 season year (2009–2025)</td></tr>
+        <tr><td>Round</td><td>Integer</td><td>Race round number within the season</td></tr>
+        <tr><td>Race_Name</td><td>String</td><td>Official Grand Prix name (e.g., "Monaco GP")</td></tr>
+        <tr><td>Circuit</td><td>String</td><td>Circuit name (e.g., "Circuit de Monaco")</td></tr>
+        <tr><td>Country</td><td>String</td><td>Host country of the Grand Prix</td></tr>
+        <tr><td>Driver</td><td>String</td><td>Full driver name</td></tr>
+        <tr><td>Nationality</td><td>String</td><td>Driver's nationality</td></tr>
+        <tr><td>Team</td><td>String</td><td>Constructor team name</td></tr>
+        <tr><td>Position</td><td>String</td><td>Race finishing position or "DNF"</td></tr>
+        <tr><td>Finishing_Position</td><td>Integer</td><td>Numeric position (999 = DNF)</td></tr>
+        <tr><td>Points</td><td>Integer</td><td>Championship points scored</td></tr>
+        <tr><td>Laps_Completed</td><td>Integer</td><td>Number of laps completed</td></tr>
+        <tr><td>Tyre_Compound</td><td>String</td><td>Primary tyre used (Soft/Medium/Hard/Inter/Wet)</td></tr>
+        <tr><td>DNF</td><td>String</td><td>"Yes" or "No"</td></tr>
+        <tr><td>DNF_Reason</td><td>String</td><td>Cause of retirement if DNF</td></tr>
+        <tr><td>Fastest_Lap</td><td>String</td><td>"Yes" or "No" (bonus point 2019+)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Data Inspection & Validation</h3>
+    <ul>
+      <li><strong>No null values</strong> in required fields (Season, Driver, Team, Points)</li>
+      <li>DNF_Reason is empty string (not null) for finishers — handled as blank in Tableau</li>
+      <li>Finishing_Position = 999 is used as a sentinel for DNF — filter this out in position-based views</li>
+      <li>Points correctly reflect F1 scoring: 25-18-15-12-10-8-6-4-2-1 with +1 for fastest lap (2019+)</li>
+      <li>Season filter in Tableau should use discrete (blue pill) not continuous for correct axis labels</li>
+    </ul>
+  </div>
+
+  <hr/>
+
+  <!-- DATA PREPARATION -->
+  <div class="section">
+    <div class="section-tag">05 — Data Preparation</div>
+    <h2>Data Preparation for Visualization</h2>
+
+    <p>Six calculated fields were created in Tableau to enable the required visualizations:</p>
+
+    <table>
+      <thead>
+        <tr><th>Field Name</th><th>Formula</th><th>Used In</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Is DNF</td><td><code>[DNF] = "Yes"</code></td><td>DNF Heatmap, Reliability</td></tr>
+        <tr><td>Completion Rate</td><td><code>IF [DNF] = "No" THEN 1 ELSE 0 END</code></td><td>Reliability Score</td></tr>
+        <tr><td>Reliability Score</td><td><code>AVG(IF [DNF]="No" THEN 1.0 ELSE 0.0 END)*100</code></td><td>Driver Reliability Chart</td></tr>
+        <tr><td>Podium Finish</td><td><code>IF [Finishing_Position] &lt;= 3 THEN 1 ELSE 0 END</code></td><td>Podium Distribution</td></tr>
+        <tr><td>Win</td><td><code>IF [Finishing_Position] = 1 THEN 1 ELSE 0 END</code></td><td>Leaderboard</td></tr>
+        <tr><td>DNF Rate</td><td><code>SUM(IF [DNF]="Yes" THEN 1 ELSE 0 END)/COUNT([Race_ID])</code></td><td>DNF Rate by Season</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr/>
+
+  <!-- VISUALIZATIONS -->
+  <div class="section">
+    <div class="section-tag">06 — Data Visualizations</div>
+    <h2>11 Unique Visualizations</h2>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Chart Name</th><th>Type</th><th>Scenario</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Championship Points by Season</td><td>Multi-Line</td><td><span class="badge badge-red">Arnold</span></td></tr>
+        <tr><td>2</td><td>Tyre Strategy Distribution</td><td>Stacked Bar</td><td><span class="badge badge-red">Arnold</span></td></tr>
+        <tr><td>3</td><td>Driver Nationality Map</td><td>Filled Map</td><td><span class="badge badge-red">Arnold</span></td></tr>
+        <tr><td>4</td><td>Constructor Standings</td><td>Horizontal Bar</td><td><span class="badge badge-red">Arnold</span></td></tr>
+        <tr><td>5</td><td>Driver Points Leaderboard</td><td>Text Table + Bar</td><td><span class="badge badge-cyan">Iisa</span></td></tr>
+        <tr><td>6</td><td>GP Host Countries</td><td>Symbol Map</td><td><span class="badge badge-cyan">Iisa</span></td></tr>
+        <tr><td>7</td><td>Podium Distribution by Driver</td><td>Stacked Bar</td><td><span class="badge badge-cyan">Iisa</span></td></tr>
+        <tr><td>8</td><td>DNF Patterns Heatmap</td><td>Square Heatmap</td><td><span class="badge badge-gold">Gilchrist</span></td></tr>
+        <tr><td>9</td><td>Failure Type Breakdown</td><td>Pie / Donut</td><td><span class="badge badge-gold">Gilchrist</span></td></tr>
+        <tr><td>10</td><td>Driver Reliability Score</td><td>Horizontal Bar</td><td><span class="badge badge-gold">Gilchrist</span></td></tr>
+        <tr><td>11</td><td>DNF Rate by Season</td><td>Area + Reference Bands</td><td><span class="badge badge-gold">Gilchrist</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr/>
+
+  <!-- DASHBOARDS -->
+  <div class="section">
+    <div class="section-tag">07 — Dashboard</div>
+    <h2>Responsive Dashboard Design</h2>
+    <p>Three interactive dashboards were built, each tailored to a specific analyst persona. All dashboards use <strong>action filters</strong> so clicking on one chart automatically filters others on the same dashboard.</p>
+
+    <div class="epics">
+      <div class="epic">
+        <div class="epic-num">01</div>
+        <div class="epic-title">Team Performance Dashboard</div>
+        <div class="epic-desc">Sheets 1–4 | Audience: Arnold | Filters: Season, Team</div>
+      </div>
+      <div class="epic">
+        <div class="epic-num">02</div>
+        <div class="epic-title">Broadcast Analytics Dashboard</div>
+        <div class="epic-desc">Sheets 5–7 | Audience: Iisa | Filters: Season, Driver</div>
+      </div>
+      <div class="epic">
+        <div class="epic-num">03</div>
+        <div class="epic-title">Technical Regulation Dashboard</div>
+        <div class="epic-desc">Sheets 8–11 | Audience: Gilchrist | Filters: Season, Team, DNF Reason</div>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- STORY -->
+  <div class="section">
+    <div class="section-tag">08 — Story</div>
+    <h2>Story: 7 Narrative Scenes</h2>
+    <p>The Tableau Story presents the F1 data as a <strong>guided narrative journey</strong> through 7 scenes, each with a descriptive caption and an embedded dashboard or visualization.</p>
+
+    <table>
+      <thead><tr><th>Scene</th><th>Caption</th><th>Content</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>The Championship Battle: 2009–2025</td><td>Team Performance Dashboard</td></tr>
+        <tr><td>2</td><td>Mercedes Dominance & Red Bull's Rise</td><td>Points by Team Line Chart</td></tr>
+        <tr><td>3</td><td>How Tyres Win Championships</td><td>Tyre Strategy Stacked Bar</td></tr>
+        <tr><td>4</td><td>The Global F1 Audience</td><td>Broadcast Analytics Dashboard</td></tr>
+        <tr><td>5</td><td>F1's Expanding World Tour</td><td>GP Host Countries Map</td></tr>
+        <tr><td>6</td><td>Reliability: The Hidden Championship</td><td>Technical Regulation Dashboard</td></tr>
+        <tr><td>7</td><td>Regulation Changes & Their Impact</td><td>DNF Rate by Season Area Chart</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr/>
+
+  <!-- PERFORMANCE TESTING -->
+  <div class="section">
+    <div class="section-tag">09 — Performance Testing</div>
+    <h2>Performance Testing Results</h2>
+
+    <table>
+      <thead><tr><th>Test</th><th>Metric</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Data Volume Rendered</td><td>Total rows in Tableau extract</td><td><span class="badge badge-green">5,419 rows</span></td></tr>
+        <tr><td>Filter Response Time</td><td>Season dropdown filter apply</td><td><span class="badge badge-green">&lt; 1 second</span></td></tr>
+        <tr><td>Calculation Fields</td><td>Number of calculated fields</td><td><span class="badge badge-green">6 fields</span></td></tr>
+        <tr><td>Visualizations Count</td><td>Unique sheets/charts</td><td><span class="badge badge-green">11 charts</span></td></tr>
+        <tr><td>Dashboard Actions</td><td>Cross-filter actions active</td><td><span class="badge badge-green">Yes</span></td></tr>
+        <tr><td>Tyre Compound Filter</td><td>Data filter utilization</td><td><span class="badge badge-green">Active on 3 sheets</span></td></tr>
+        <tr><td>Story Scenes</td><td>Total narrative scenes</td><td><span class="badge badge-green">7 scenes</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr/>
+
+  <!-- ARCHITECTURE -->
+  <div class="section">
+    <div class="section-tag">10 — Technical Architecture</div>
+    <h2>Technical Architecture</h2>
+
+    <div class="arch">
+      <div class="arch-node">📂 CSV Dataset<br/>(5,419 rows)</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">🔗 Tableau<br/>Data Source</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">⚙️ Calculated<br/>Fields</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">📊 11 Tableau<br/>Worksheets</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">📋 3 Dashboards<br/>+ Story</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">🌐 Tableau<br/>Public</div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3>Skills Required</h3>
+        <ul>
+          <li>Tableau (Business Intelligence Software)</li>
+          <li>Dashboard Design</li>
+          <li>Data Visualization (Tableau)</li>
+          <li>Data Preprocessing</li>
+          <li>Calculated Fields & LOD Expressions</li>
+          <li>Tableau Story & Narrative Design</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Project Epics (8 Total)</h3>
+        <ul>
+          <li>Define Problem / Problem Understanding</li>
+          <li>Data Collection &amp; Extraction from Database</li>
+          <li>Data Preparation</li>
+          <li>Data Visualization</li>
+          <li>Dashboard</li>
+          <li>Story</li>
+          <li>Performance Testing</li>
+          <li>Publishing &amp; Project Documentation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <!-- PUBLISHING -->
+  <div class="section">
+    <div class="section-tag">11 — Publishing</div>
+    <h2>Publishing to Tableau Public</h2>
+    <p>
+      The completed workbook was published to <strong>Tableau Public</strong> as a packaged workbook (<code>.twbx</code>), bundling the dataset and all visualizations into a single shareable file. The public dashboard URL serves as the <strong>Demo Link</strong> for project submission.
+    </p>
+    <ul>
+      <li><strong>Workbook name:</strong> F1 Race Intelligence Dashboard 2009–2025</li>
+      <li><strong>Platform:</strong> Tableau Public (public.tableau.com)</li>
+      <li><strong>Packaged file:</strong> F1_Race_Intelligence.twbx</li>
+      <li><strong>Demo Link:</strong> [To be updated after publishing]</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>F1 Race Intelligence Dashboard &nbsp;|&nbsp; Data Analytics with Tableau &nbsp;|&nbsp; 2009–2025</p>
+  <p style="margin-top:6px;">Built with <span>❤</span> using Tableau Desktop &amp; real F1 race intelligence data</p>
+</footer>
+
+</body>
+</html>

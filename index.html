@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>F1 Race Intelligence Dashboard - Anant Raikwar</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0a0d12;
+            --panel: #141a23;
+            --muted: #9da9b8;
+            --red: #e10600;
+            --white: #f4f6f8;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top right, #25212a 0, #0a0d12 40%);
+            color: var(--white);
+            font-family: Inter, Segoe UI, Arial, sans-serif;
+        }
+        .wrap {
+            max-width: 1400px;
+            margin: auto;
+            padding: 28px;
+        }
+        .top {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: center;
+            border-bottom: 1px solid #303743;
+            padding-bottom: 22px;
+        }
+        .eyebrow {
+            color: #ff6b65;
+            letter-spacing: 3px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .title {
+            font-size: clamp(27px, 4vw, 48px);
+            margin: 8px 0;
+        }
+        .sub {
+            color: var(--muted);
+            margin: 0;
+        }
+        .badge {
+            background: #291513;
+            border: 1px solid #78302d;
+            color: #ff8c87;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin: 22px 0;
+        }
+        .metric, .card {
+            background: linear-gradient(145deg, #171e29, #11161e);
+            border: 1px solid #2b3441;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 12px 30px #0002;
+        }
+        .metric span {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .metric strong {
+            display: block;
+            font-size: 30px;
+            margin-top: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .card h2 {
+            font-size: 16px;
+            margin: 0 0 16px;
+        }
+        .chart {
+            height: 290px;
+        }
+        .note {
+            margin: 18px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .foot {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-top: 1px solid #303743;
+            margin-top: 26px;
+            padding-top: 18px;
+            color: #788595;
+            font-size: 12px;
+        }
+        @media(max-width: 800px) {
+            .metrics { grid-template-columns: repeat(2, 1fr); }
+            .grid { grid-template-columns: 1fr; }
+            .top { align-items: flex-start; flex-direction: column; }
+        }
+        @media(max-width: 430px) {
+            .wrap { padding: 16px; }
+            .metrics { grid-template-columns: 1fr 1fr; }
+            .metric { padding: 14px; }
+            .metric strong { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <header class="top">
+            <div>
+                <div class="eyebrow">MOTORSPORT DATA • ANALYTICS</div>
+                <h1 class="title">FORMULA 1 <span style="color: #e10600;">RACE INTELLIGENCE</span></h1>
+                <p class="sub">Performance trends, driver wins, constructor points & DNF reliability analysis</p>
+            </div>
+            <div class="badge">DATASET: 2009–2025</div>
+        </header>
+
+        <section class="metrics">
+            <div class="metric">
+                <span>Race-result records</span>
+                <strong id="races">—</strong>
+            </div>
+            <div class="metric"><span>Circuits in dataset</span><strong id="circuits">—</strong></div>
+            <div class="metric"><span>Host Countries</span><strong id="countries">—</strong></div>
+            <div class="metric"><span>Total DNF Incidents</span><strong id="dnfs">—</strong></div>
+        </section>
+
+        <section class="grid">
+            <div class="card">
+                <h2>🏆 Driver Wins Leaderboard (Scenario 2)</h2>
+                <div class="chart"><canvas id="wins"></canvas></div>
+            </div>
+            <div class="card">
+                <h2>🏎️ Constructor Points — Top Teams (Scenario 1)</h2>
+                <div class="chart"><canvas id="teams"></canvas></div>
+            </div>
+            <div class="card">
+                <h2>📈 Season-wise Points Trajectory (2009–2025)</h2>
+                <div class="chart"><canvas id="year"></canvas></div>
+            </div>
+            <div class="card">
+                <h2>🛠️ DNF Failures by Constructor (Scenario 3)</h2>
+                <div class="chart"><canvas id="dnf_chart"></canvas></div>
+            </div>
+        </section>
+
+        <p class="note">Note: Interactive analytics generated from f1_race_data_2009_2025.csv. Built for the FutureSkills Prime / SkillWallet Tableau Data Analytics capstone project.</p>
+
+        <footer class="foot">
+            <span>F1 Race Intelligence Dashboard • Anant Raikwar</span>
+            <span>Built for Data Analytics Evaluation • GitHub Pages Ready</span>
+        </footer>
+    </main>
+
+    <script>
+        // Exact calculated metrics from f1_race_data_2009_2025.csv
+        const D = {
+            "seasons": [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+            "wins_labels": ["Lewis Hamilton", "Max Verstappen", "Sebastian Vettel", "Sergio Perez", "Mark Webber", "Nico Rosberg", "George Russell", "Kimi Raikkonen"],
+            "wins_values": [105, 93, 60, 14, 9, 9, 9, 6],
+            "team_labels": ["Red Bull", "Mercedes", "Ferrari", "McLaren", "Alpine", "Alfa Romeo", "Haas", "Aston Martin", "Williams", "RB"],
+            "team_values": [11657.0, 7501.0, 5026.0, 3705.0, 1889.0, 460.0, 445.0, 294.0, 286.0, 88.0],
+            "year_labels": [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+            "year_values": [1717.0, 1919.0, 1573.0, 1608.0, 1614.0, 1613.0, 1616.0, 1616.0, 1616.0, 1616.0, 2137.0, 1730.0, 2234.0, 2238.0, 2235.0, 2441.0, 1828.0],
+            "dnf_team_labels": ["Red Bull", "Haas", "Alpine", "Ferrari", "McLaren", "Mercedes", "Alfa Romeo", "Williams", "Aston Martin", "RB"],
+            "dnf_team_values": [140, 128, 100, 97, 92, 91, 77, 46, 24, 17],
+            "total_race_rows": 5419,
+            "circuits": 35,
+            "countries": 28,
+            "dnf_count": 812
+        };
+
+        // Populate Summary Metrics
+        document.getElementById('races').textContent = D.total_race_rows.toLocaleString();
+        document.getElementById('circuits').textContent = D.circuits;
+        document.getElementById('countries').textContent = D.countries;
+        document.getElementById('dnfs').textContent = D.dnf_count.toLocaleString();
+
+        // Chart styling
+        Chart.defaults.color = '#aab4c2';
+        Chart.defaults.borderColor = '#2b3441';
+        Chart.defaults.font.family = 'Inter, Segoe UI, Arial';
+
+        function makeChart(id, type, labels, values, label, horizontal = false) {
+            new Chart(document.getElementById(id), {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: values,
+                        backgroundColor: type === 'line' ? 'rgba(225, 6, 0, .18)' : 'rgba(225, 6, 0, .78)',
+                        borderColor: '#e10600',
+                        borderWidth: 2,
+                        borderRadius: 5,
+                        fill: type === 'line',
+                        tension: 0.28,
+                        pointRadius: type === 'line' ? 3 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: horizontal ? 'y' : 'x',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#252d38' } },
+                        y: { beginAtZero: true, grid: { color: '#252d38' } }
+                    }
+                }
+            });
+        }
+
+        // Render Charts
+        makeChart('wins', 'bar', D.wins_labels, D.wins_values, 'Race Wins', true);
+        makeChart('teams', 'bar', D.team_labels, D.team_values, 'Total Points', true);
+        makeChart('year', 'line', D.year_labels, D.year_values, 'Season Points');
+        makeChart('dnf_chart', 'bar', D.dnf_team_labels, D.dnf_team_values, 'DNF Incidents', true);
+    </script>
+</body>
+</html>
